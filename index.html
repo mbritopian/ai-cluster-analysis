@@ -692,6 +692,38 @@
                 .attr("transform", d => `translate(${d.x},${d.y})`);
         });
         
+        // Fit and center the network to the viewport
+        function fitAndCenterNetwork() {
+            // Get all node positions
+            const allNodePositions = allNodes.map(d => [d.x, d.y]);
+            const xs = allNodePositions.map(p => p[0]);
+            const ys = allNodePositions.map(p => p[1]);
+            const minX = Math.min(...xs);
+            const maxX = Math.max(...xs);
+            const minY = Math.min(...ys);
+            const maxY = Math.max(...ys);
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const bboxWidth = maxX - minX;
+            const bboxHeight = maxY - minY;
+            // Add some padding
+            const padding = 60;
+            const scale = Math.min(
+                (width - padding) / bboxWidth,
+                (height - padding) / bboxHeight,
+                1
+            );
+            // Center
+            const tx = width / 2 - ((minX + maxX) / 2) * scale;
+            const ty = height / 2 - ((minY + maxY) / 2) * scale;
+            d3.select("#network")
+                .transition().duration(500)
+                .call(zoom.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+        }
+        
+        // After simulation is done, fit and center
+        simulation.on("end", fitAndCenterNetwork);
+        
         // Control functions
         let currentView = 'full';
         
@@ -714,14 +746,11 @@
         }
         
         function resetZoom() {
-            const width = window.innerWidth;
-            const height = window.innerHeight;
-            const svg = d3.select("#network");
-            svg.transition().duration(500).call(
-                zoom.transform,
-                d3.zoomIdentity.translate(width / 2, height / 2).scale(1).translate(-width / 2, -height / 2)
-            );
+            fitAndCenterNetwork();
         }
+        
+        // On window resize, refit
+        window.addEventListener('resize', fitAndCenterNetwork);
     </script>
 </body>
 </html>
