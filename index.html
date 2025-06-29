@@ -706,12 +706,12 @@
             const height = window.innerHeight;
             const bboxWidth = maxX - minX;
             const bboxHeight = maxY - minY;
-            // Add some padding
-            const padding = 60;
+            // Add more generous padding and reduce max scale
+            const padding = 160;
             const scale = Math.min(
                 (width - padding) / bboxWidth,
                 (height - padding) / bboxHeight,
-                1
+                0.85 // never zoom in more than 85%
             );
             // Center
             const tx = width / 2 - ((minX + maxX) / 2) * scale;
