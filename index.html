@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Creator Narratives - Semantic Network</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #0a0a0a;
+            color: #e0e0e0;
+            overflow: hidden;
+        }
+        
+        .container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        
+        .header {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            z-index: 100;
+            background: rgba(26, 26, 26, 0.95);
+            padding: 20px 40px;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 28px;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .subtitle {
+            color: #999;
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        #network {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .node:hover {
+            filter: brightness(1.3);
+        }
+        
+        .node-label {
+            pointer-events: none;
+            font-size: 14px;
+            font-weight: 600;
+            text-anchor: middle;
+            fill: #fff;
+            text-shadow: 0 0 8px rgba(0, 0, 0, 0.8), 0 0 3px rgba(0, 0, 0, 0.9);
+        }
+        
+        .keyword-node {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .keyword-label {
+            font-size: 11px;
+            font-weight: 400;
+            fill: #ddd;
+            text-anchor: middle;
+            text-shadow: 0 0 4px rgba(0, 0, 0, 0.9);
+            pointer-events: none;
+        }
+        
+        .link {
+            stroke-opacity: 0.3;
+            transition: all 0.3s ease;
+            pointer-events: none;
+        }
+        
+        .link.narrative-link {
+            stroke: #666;
+            stroke-dasharray: 5,5;
+        }
+        
+        .link.keyword-link {
+            stroke: #888;
+        }
+        
+        .link:hover {
+            stroke-opacity: 1;
+            stroke-width: 3;
+        }
+        
+        .tooltip {
+            position: absolute;
+            padding: 12px 16px;
+            background: rgba(0, 0, 0, 0.95);
+            border: 1px solid #444;
+            border-radius: 8px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 14px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            max-width: 300px;
+        }
+        
+        .tooltip-title {
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .tooltip-metric {
+            color: #ccc;
+            margin: 4px 0;
+        }
+        
+        .tooltip-metric strong {
+            color: #4ECDC4;
+        }
+        
+        .legend {
+            position: absolute;
+            bottom: 30px;
+            left: 30px;
+            background: rgba(26, 26, 26, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+        }
+        
+        .legend-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 13px;
+        }
+        
+        .legend-circle {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .legend-rect {
+            width: 16px;
+            height: 12px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+        
+        .controls {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(26, 26, 26, 0.95);
+            padding: 15px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+        }
+        
+        .control-button {
+            padding: 8px 16px;
+            background: #2a2a2a;
+            border: none;
+            border-radius: 6px;
+            color: #ccc;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+            font-size: 13px;
+        }
+        
+        .control-button:hover {
+            background: #3a3a3a;
+            color: #fff;
+        }
+        
+        .control-button.active {
+            background: #4ECDC4;
+            color: #000;
+        }
+        
+        .info-panel {
+            position: absolute;
+            top: 120px;
+            right: 30px;
+            background: rgba(26, 26, 26, 0.95);
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid #2a2a2a;
+            max-width: 250px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .info-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #4ECDC4;
+        }
+        
+        .fade-out {
+            opacity: 0.1 !important;
+        }
+        
+        .highlight {
+            opacity: 1 !important;
+            stroke-width: 3 !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>AI Narrative Semantic Network</h1>
+            <p class="subtitle">Visualizing how narratives connect through shared keywords and concepts</p>
+        </div>
+        
+        <div class="controls">
+            <button class="control-button active" onclick="toggleView('full')">Full Network</button>
+            <button class="control-button" onclick="toggleView('simple')">Simple View</button>
+            <button class="control-button" onclick="resetZoom()">Reset Zoom</button>
+        </div>
+        
+        <div class="info-panel">
+            <div class="info-title">How to Read This Network</div>
+            <p>• <strong>Large circles</strong>: Main narratives</p>
+            <p>• <strong>Small rectangles</strong>: Connecting keywords</p>
+            <p>• <strong>Solid lines</strong>: Keyword connections</p>
+            <p>• <strong>Dashed lines</strong>: Direct narrative links</p>
+            <p>• <strong>Hover</strong> to explore connections</p>
+        </div>
+        
+        <svg id="network"></svg>
+        
+        <div class="legend">
+            <div class="legend-title">Node Types</div>
+            <div class="legend-item">
+                <div class="legend-circle" style="background: #FF6B6B;"></div>
+                <span>Main Narrative</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-rect" style="background: #666;"></div>
+                <span>Connecting Keyword</span>
+            </div>
+            <div class="legend-item">
+                <div style="width: 16px; height: 2px; background: #666; margin-right: 8px;"></div>
+                <span>Semantic Connection</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="tooltip"></div>
+    
+    <script>
+        // Enhanced data with semantic connections
+        const semanticData = {
+            narratives: [
+                {
+                    id: "Builder's Revolution",
+                    type: "narrative",
+                    size: 1770,
+                    color: "#FF6B6B",
+                    keywords: ["build", "create", "launch", "ship", "MVP", "product"],
+                    metrics: { posts: 8112, engagement: 7002623 }
+                },
+                {
+                    id: "AI Tool Wars",
+                    type: "narrative",
+                    size: 1246,
+                    color: "#4ECDC4",
+                    keywords: ["ChatGPT", "Claude", "Gemini", "comparison", "vs"],
+                    metrics: { posts: 5931, engagement: 3690933 }
+                },
+                {
+                    id: "Education Renaissance",
+                    type: "narrative",
+                    size: 725,
+                    color: "#45B7D1",
+                    keywords: ["learn", "course", "tutorial", "teach", "skill"],
+                    metrics: { posts: 3838, engagement: 2748963 }
+                },
+                {
+                    id: "Democratization",
+                    type: "narrative",
+                    size: 569,
+                    color: "#96CEB4",
+                    keywords: ["everyone", "accessible", "free", "open source"],
+                    metrics: { posts: 3426, engagement: 2963891 }
+                },
+                {
+                    id: "Autonomous Agents",
+                    type: "narrative",
+                    size: 553,
+                    color: "#DDA0DD",
+                    keywords: ["agent", "autonomous", "multi-agent", "agentic"],
+                    metrics: { posts: 3523, engagement: 3081636 }
+                },
+                {
+                    id: "Practical AI",
+                    type: "narrative",
+                    size: 303,
+                    color: "#F7DC6F",
+                    keywords: ["workflow", "productivity", "ROI", "automate"],
+                    metrics: { posts: 1943, engagement: 1922795 }
+                },
+                {
+                    id: "Ethics & Safety",
+                    type: "narrative",
+                    size: 130,
+                    color: "#85929E",
+                    keywords: ["ethics", "responsible", "privacy", "safety"],
+                    metrics: { posts: 799, engagement: 399075 }
+                }
+            ],
+            keywords: [
+                // Builder + Tool Wars
+                { id: "build with ChatGPT", type: "keyword", connects: ["Builder's Revolution", "AI Tool Wars"] },
+                { id: "Claude for development", type: "keyword", connects: ["Builder's Revolution", "AI Tool Wars"] },
+                { id: "choosing AI tools", type: "keyword", connects: ["Builder's Revolution", "AI Tool Wars"] },
+                { id: "Cursor for coding", type: "keyword", connects: ["Builder's Revolution", "AI Tool Wars"] },
+                
+                // Education + Democratization
+                { id: "free AI courses", type: "keyword", connects: ["Education Renaissance", "Democratization"] },
+                { id: "accessible tutorials", type: "keyword", connects: ["Education Renaissance", "Democratization"] },
+                { id: "learn AI for everyone", type: "keyword", connects: ["Education Renaissance", "Democratization"] },
+                { id: "no-code education", type: "keyword", connects: ["Education Renaissance", "Democratization"] },
+                
+                // Builder + Agents
+                { id: "build AI agents", type: "keyword", connects: ["Builder's Revolution", "Autonomous Agents"] },
+                { id: "agent development", type: "keyword", connects: ["Builder's Revolution", "Autonomous Agents"] },
+                { id: "ship agent products", type: "keyword", connects: ["Builder's Revolution", "Autonomous Agents"] },
+                
+                // Practical + Tool Wars
+                { id: "ChatGPT for business", type: "keyword", connects: ["Practical AI", "AI Tool Wars"] },
+                { id: "productivity tools", type: "keyword", connects: ["Practical AI", "AI Tool Wars"] },
+                { id: "workflow automation", type: "keyword", connects: ["Practical AI", "AI Tool Wars"] },
+                
+                // Agents + Practical
+                { id: "deploy agents", type: "keyword", connects: ["Autonomous Agents", "Practical AI"] },
+                { id: "agent automation", type: "keyword", connects: ["Autonomous Agents", "Practical AI"] },
+                { id: "ROI of agents", type: "keyword", connects: ["Autonomous Agents", "Practical AI"] },
+                
+                // Builder + Education
+                { id: "learn to build", type: "keyword", connects: ["Builder's Revolution", "Education Renaissance"] },
+                { id: "development tutorials", type: "keyword", connects: ["Builder's Revolution", "Education Renaissance"] },
+                
+                // Democratization + Agents
+                { id: "open source agents", type: "keyword", connects: ["Democratization", "Autonomous Agents"] },
+                { id: "agents for everyone", type: "keyword", connects: ["Democratization", "Autonomous Agents"] },
+                
+                // Ethics connections
+                { id: "responsible AI", type: "keyword", connects: ["Ethics & Safety", "Builder's Revolution"] },
+                { id: "ethical automation", type: "keyword", connects: ["Ethics & Safety", "Autonomous Agents"] },
+                { id: "privacy in AI tools", type: "keyword", connects: ["Ethics & Safety", "AI Tool Wars"] }
+            ],
+            directLinks: [
+                { source: "Builder's Revolution", target: "AI Tool Wars", strength: 448 },
+                { source: "Builder's Revolution", target: "Education Renaissance", strength: 332 },
+                { source: "Builder's Revolution", target: "Autonomous Agents", strength: 306 },
+                { source: "Builder's Revolution", target: "Democratization", strength: 260 },
+                { source: "Education Renaissance", target: "Democratization", strength: 181 },
+                { source: "AI Tool Wars", target: "Democratization", strength: 165 },
+                { source: "AI Tool Wars", target: "Autonomous Agents", strength: 139 },
+                { source: "Autonomous Agents", target: "Practical AI", strength: 65 }
+            ]
+        };
+        
+        // Combine all nodes
+        const allNodes = [
+            ...semanticData.narratives,
+            ...semanticData.keywords
+        ];
+        
+        // Create links for keywords
+        const keywordLinks = [];
+        semanticData.keywords.forEach(keyword => {
+            keyword.connects.forEach(narrative => {
+                keywordLinks.push({
+                    source: keyword.id,
+                    target: narrative,
+                    type: "keyword"
+                });
+            });
+        });
+        
+        // Set up dimensions
+        const width = window.innerWidth;
+        const height = window.innerHeight;
+        
+        // Create SVG
+        const svg = d3.select("#network")
+            .attr("width", width)
+            .attr("height", height);
+            
+        // Create zoom behavior
+        const zoom = d3.zoom()
+            .scaleExtent([0.3, 4])
+            .on("zoom", (event) => {
+                container.attr("transform", event.transform);
+            });
+            
+        svg.call(zoom);
+        
+        const container = svg.append("g");
+        
+        // Create tooltip
+        const tooltip = d3.select(".tooltip");
+        
+        // Create force simulation
+        const simulation = d3.forceSimulation(allNodes)
+            .force("link", d3.forceLink([...keywordLinks, ...semanticData.directLinks])
+                .id(d => d.id)
+                .distance(d => d.type === "keyword" ? 100 : 200))
+            .force("charge", d3.forceManyBody()
+                .strength(d => d.type === "narrative" ? -1500 : -300))
+            .force("center", d3.forceCenter(width / 2, height / 2))
+            .force("collision", d3.forceCollide()
+                .radius(d => d.type === "narrative" ? Math.sqrt(d.size) * 3 : 30));
+        
+        // Create link groups
+        const linkGroup = container.append("g");
+        
+        // Direct narrative links (dashed)
+        const narrativeLinks = linkGroup.selectAll(".narrative-link")
+            .data(semanticData.directLinks)
+            .enter().append("line")
+            .attr("class", "link narrative-link")
+            .attr("stroke-width", d => Math.sqrt(d.strength / 50));
+        
+        // Keyword links (solid)
+        const keywordLinksElements = linkGroup.selectAll(".keyword-link")
+            .data(keywordLinks)
+            .enter().append("line")
+            .attr("class", "link keyword-link")
+            .attr("stroke-width", 2);
+        
+        // Create node groups
+        const nodeGroup = container.append("g");
+        
+        // Narrative nodes
+        const narrativeNodes = nodeGroup.selectAll(".narrative-node")
+            .data(semanticData.narratives)
+            .enter().append("g")
+            .attr("class", "narrative-group");
+            
+        narrativeNodes.append("circle")
+            .attr("class", "node narrative-node")
+            .attr("r", d => Math.sqrt(d.size) * 2.5)
+            .attr("fill", d => d.color)
+            .attr("stroke", d => d.color)
+            .attr("stroke-width", 3)
+            .attr("fill-opacity", 0.8);
+            
+        narrativeNodes.append("text")
+            .attr("class", "node-label")
+            .text(d => d.id)
+            .attr("y", 5);
+        
+        // Keyword nodes
+        const keywordNodes = nodeGroup.selectAll(".keyword-node")
+            .data(semanticData.keywords)
+            .enter().append("g")
+            .attr("class", "keyword-group");
+            
+        keywordNodes.append("rect")
+            .attr("class", "keyword-node")
+            .attr("width", d => d.id.length * 7 + 20)
+            .attr("height", 24)
+            .attr("x", d => -(d.id.length * 7 + 20) / 2)
+            .attr("y", -12)
+            .attr("rx", 4)
+            .attr("fill", "#3a3a3a")
+            .attr("stroke", "#666")
+            .attr("stroke-width", 1);
+            
+        keywordNodes.append("text")
+            .attr("class", "keyword-label")
+            .text(d => d.id)
+            .attr("y", 4);
+        
+        // Add drag functionality
+        function drag(simulation) {
+            function dragstarted(event) {
+                if (!event.active) simulation.alphaTarget(0.3).restart();
+                event.subject.fx = event.subject.x;
+                event.subject.fy = event.subject.y;
+            }
+            
+            function dragged(event) {
+                event.subject.fx = event.x;
+                event.subject.fy = event.y;
+            }
+            
+            function dragended(event) {
+                if (!event.active) simulation.alphaTarget(0);
+                event.subject.fx = null;
+                event.subject.fy = null;
+            }
+            
+            return d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended);
+        }
+        
+        // Apply drag to all nodes
+        narrativeNodes.call(drag(simulation));
+        keywordNodes.call(drag(simulation));
+        
+        // Hover effects for narrative nodes
+        narrativeNodes
+            .on("mouseover", function(event, d) {
+                // Find connected keywords
+                const connectedKeywords = semanticData.keywords
+                    .filter(k => k.connects.includes(d.id))
+                    .map(k => k.id);
+                
+                // Highlight relevant elements
+                keywordLinksElements
+                    .classed("fade-out", l => !connectedKeywords.includes(l.source.id) && l.target.id !== d.id)
+                    .classed("highlight", l => connectedKeywords.includes(l.source.id) || l.target.id === d.id);
+                
+                narrativeLinks
+                    .classed("fade-out", l => l.source.id !== d.id && l.target.id !== d.id)
+                    .classed("highlight", l => l.source.id === d.id || l.target.id === d.id);
+                
+                d3.selectAll(".keyword-node")
+                    .classed("fade-out", k => !connectedKeywords.includes(k.id));
+                
+                d3.selectAll(".narrative-node")
+                    .classed("fade-out", n => {
+                        if (n.id === d.id) return false;
+                        const isDirectlyConnected = semanticData.directLinks.some(l => 
+                            (l.source.id === d.id && l.target.id === n.id) ||
+                            (l.target.id === d.id && l.source.id === n.id)
+                        );
+                        const isKeywordConnected = connectedKeywords.some(kw => {
+                            const keyword = semanticData.keywords.find(k => k.id === kw);
+                            return keyword && keyword.connects.includes(n.id);
+                        });
+                        return !isDirectlyConnected && !isKeywordConnected;
+                    });
+                
+                // Show tooltip
+                tooltip.style("opacity", 1)
+                    .html(`
+                        <div class="tooltip-title">${d.id}</div>
+                        <div class="tooltip-metric"><strong>Posts:</strong> ${d.metrics.posts.toLocaleString()}</div>
+                        <div class="tooltip-metric"><strong>Engagement:</strong> ${d.metrics.engagement.toLocaleString()}</div>
+                        <div class="tooltip-metric"><strong>Key concepts:</strong> ${d.keywords.join(", ")}</div>
+                        <div class="tooltip-metric"><strong>Connections:</strong> ${connectedKeywords.length} semantic bridges</div>
+                    `)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 10) + "px");
+            })
+            .on("mouseout", resetHighlight)
+            .on("mousemove", function(event) {
+                tooltip
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 10) + "px");
+            });
+        
+        // Hover effects for keyword nodes
+        keywordNodes
+            .on("mouseover", function(event, d) {
+                // Highlight connected narratives
+                const connectedNarratives = d.connects;
+                
+                keywordLinksElements
+                    .classed("fade-out", l => l.source.id !== d.id)
+                    .classed("highlight", l => l.source.id === d.id);
+                
+                d3.selectAll(".narrative-node")
+                    .classed("fade-out", n => !connectedNarratives.includes(n.id));
+                
+                d3.selectAll(".keyword-node")
+                    .classed("fade-out", k => k.id !== d.id);
+                
+                // Show tooltip
+                tooltip.style("opacity", 1)
+                    .html(`
+                        <div class="tooltip-title">"${d.id}"</div>
+                        <div class="tooltip-metric"><strong>Connects:</strong> ${d.connects.join(" ↔ ")}</div>
+                        <div class="tooltip-metric">This phrase bridges these narratives by combining their core concepts</div>
+                    `)
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 10) + "px");
+            })
+            .on("mouseout", resetHighlight)
+            .on("mousemove", function(event) {
+                tooltip
+                    .style("left", (event.pageX + 10) + "px")
+                    .style("top", (event.pageY - 10) + "px");
+            });
+        
+        function resetHighlight() {
+            d3.selectAll(".link, .keyword-node, .narrative-node")
+                .classed("fade-out", false)
+                .classed("highlight", false);
+            tooltip.style("opacity", 0);
+        }
+        
+        // Update positions on tick
+        simulation.on("tick", () => {
+            narrativeLinks
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+            
+            keywordLinksElements
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+            
+            narrativeNodes
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+                
+            keywordNodes
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+        
+        // Control functions
+        let currentView = 'full';
+        
+        function toggleView(view) {
+            currentView = view;
+            document.querySelectorAll('.control-button').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.textContent.toLowerCase().includes(view)) {
+                    btn.classList.add('active');
+                }
+            });
+            
+            if (view === 'simple') {
+                d3.selectAll('.keyword-group, .keyword-link').style('display', 'none');
+                d3.selectAll('.narrative-link').style('display', 'block');
+            } else {
+                d3.selectAll('.keyword-group, .keyword-link').style('display', 'block');
+                d3.selectAll('.narrative-link').style('display', 'block');
+            }
+        }
+        
+        function resetZoom() {
+            svg.transition()
+                .duration(750)
+                .call(zoom.transform, d3.zoomIdentity);
+        }
+    </script>
+</body>
+</html>
