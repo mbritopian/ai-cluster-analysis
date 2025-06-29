@@ -1,2 +1,10 @@
-vercel login 
-vercel --yes 
+{
+  "name": "ai-cluster-analysis",
+  "version": "1.0.0",
+  "description": "AI Cluster Analysis visualization",
+  "main": "index.html",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+} 
