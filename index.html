@@ -23,49 +23,33 @@
         
         .header {
             position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            text-align: center;
+            top: 0;
+            left: 0;
+            text-align: left;
             z-index: 100;
             background: rgba(26, 26, 26, 0.95);
-            padding: 20px 40px;
-            border-radius: 12px;
+            padding: 20px 40px 10px 40px;
+            border-radius: 0 0 12px 12px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            width: auto;
-            max-width: 90vw;
+            width: 100vw;
+            max-width: 100vw;
         }
         
-        @media (max-width: 600px) {
-            .header {
-                padding: 12px 8px;
-                border-radius: 0 0 12px 12px;
-                width: 100vw;
-                left: 0;
-                transform: none;
-                max-width: 100vw;
-            }
-            .header h1 {
-                font-size: 20px;
-            }
-            .subtitle {
-                font-size: 12px;
-            }
-        }
-        
-        h1 {
+        .header h1 {
             margin: 0 0 10px 0;
             font-size: 28px;
             font-weight: 600;
             background: linear-gradient(135deg, #FF6B6B 0%, #4ECDC4 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-align: left;
         }
         
         .subtitle {
             color: #999;
             font-size: 14px;
             margin: 0;
+            text-align: left;
         }
         
         #network {
@@ -171,6 +155,16 @@
         }
         
         @media (max-width: 600px) {
+            .header {
+                padding: 12px 8px 6px 8px;
+                border-radius: 0 0 12px 12px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .subtitle {
+                font-size: 12px;
+            }
             .legend {
                 left: 0;
                 right: 0;
@@ -270,7 +264,7 @@
         
         .navbar {
             position: absolute;
-            top: 0;
+            top: 70px;
             left: 0;
             width: 100vw;
             background: rgba(26, 26, 26, 0.95);
@@ -280,6 +274,7 @@
             align-items: center;
             z-index: 200;
             border-bottom: 1px solid #222;
+            justify-content: flex-start;
         }
         
         @media (max-width: 600px) {
@@ -288,21 +283,22 @@
                 align-items: flex-start;
                 padding: 8px 4px 4px 4px;
                 gap: 8px;
+                top: 60px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
+        <div class="header">
+            <h1>AI Influencer Narratives: Cluster Analysis</h1>
+            <p class="subtitle" style="text-align:left;">Visualizing how narratives connect through shared keywords and concepts</p>
+        </div>
         <nav class="navbar">
             <button class="control-button active" onclick="toggleView('full')">Full Network</button>
             <button class="control-button" onclick="toggleView('simple')">Simple View</button>
             <button class="control-button" onclick="resetZoom()">Reset Zoom</button>
         </nav>
-        <div class="header">
-            <h1>AI Narrative Semantic Network</h1>
-            <p class="subtitle">Visualizing how narratives connect through shared keywords and concepts</p>
-        </div>
         
         <div class="controls" style="display:none;"></div>
         
@@ -719,9 +715,13 @@
         }
         
         function resetZoom() {
-            svg.transition()
-                .duration(750)
-                .call(zoom.transform, d3.zoomIdentity);
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            const svg = d3.select("#network");
+            svg.transition().duration(500).call(
+                zoom.transform,
+                d3.zoomIdentity.translate(width / 2, height / 2).scale(1).translate(-width / 2, -height / 2)
+            );
         }
     </script>
 </body>
