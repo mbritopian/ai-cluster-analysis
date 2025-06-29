@@ -32,6 +32,25 @@
             padding: 20px 40px;
             border-radius: 12px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            width: auto;
+            max-width: 90vw;
+        }
+        
+        @media (max-width: 600px) {
+            .header {
+                padding: 12px 8px;
+                border-radius: 0 0 12px 12px;
+                width: 100vw;
+                left: 0;
+                transform: none;
+                max-width: 100vw;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .subtitle {
+                font-size: 12px;
+            }
         }
         
         h1 {
@@ -139,12 +158,27 @@
         
         .legend {
             position: absolute;
-            bottom: 30px;
-            left: 30px;
+            bottom: 0;
+            left: 0;
+            margin: 0;
             background: rgba(26, 26, 26, 0.95);
             padding: 20px;
-            border-radius: 12px;
+            border-radius: 12px 12px 0 0;
             border: 1px solid #2a2a2a;
+            width: calc(100vw - 60px);
+            max-width: 400px;
+            box-sizing: border-box;
+        }
+        
+        @media (max-width: 600px) {
+            .legend {
+                left: 0;
+                right: 0;
+                width: 100vw;
+                max-width: 100vw;
+                border-radius: 0;
+                padding: 12px 8px;
+            }
         }
         
         .legend-title {
@@ -246,15 +280,6 @@
             <button class="control-button active" onclick="toggleView('full')">Full Network</button>
             <button class="control-button" onclick="toggleView('simple')">Simple View</button>
             <button class="control-button" onclick="resetZoom()">Reset Zoom</button>
-        </div>
-        
-        <div class="info-panel">
-            <div class="info-title">How to Read This Network</div>
-            <p>• <strong>Large circles</strong>: Main narratives</p>
-            <p>• <strong>Small rectangles</strong>: Connecting keywords</p>
-            <p>• <strong>Solid lines</strong>: Keyword connections</p>
-            <p>• <strong>Dashed lines</strong>: Direct narrative links</p>
-            <p>• <strong>Hover</strong> to explore connections</p>
         </div>
         
         <svg id="network"></svg>
